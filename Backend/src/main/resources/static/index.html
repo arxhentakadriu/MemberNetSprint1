@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MemberNet</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section id="login-panel" class="card" aria-labelledby="login-title">
+        <p class="eyebrow">MEMBERNET</p>
+        <h1 id="login-title">Login</h1>
+        <p class="intro">Access your membership account securely.</p>
+        <form id="login-form" novalidate>
+          <label for="username">Username</label
+          ><input
+            id="username"
+            name="username"
+            autocomplete="username"
+            required
+          />
+          <label for="password">Password</label
+          ><input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+          <p
+            id="form-message"
+            class="message"
+            role="alert"
+            aria-live="polite"
+          ></p>
+          <button id="login-button" type="submit">Login</button>
+        </form>
+      </section>
+      <section id="home-panel" class="card hidden" aria-live="polite">
+        <div class="home-header">
+          <div>
+            <p class="eyebrow">MEMBERNET</p>
+            <h1 id="welcome-title"></h1>
+          </div>
+          <button id="logout-button" class="secondary">Log out</button>
+        </div>
+        <div class="success" role="status">✓ Login completed successfully</div>
+        <h2 id="home-page"></h2>
+        <dl>
+          <div>
+            <dt>Member ID</dt>
+            <dd id="member-id"></dd>
+          </div>
+          <div>
+            <dt>Permissions</dt>
+            <dd id="roles"></dd>
+          </div>
+        </dl>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

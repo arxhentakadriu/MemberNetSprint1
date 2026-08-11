@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: membernet
+server:
+  error:
+    include-message: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+info:
+  app:
+    name: MemberNet
+    description: Membership management training project
