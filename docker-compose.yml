@@ -1,6 +1,32 @@
 services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: membernet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - membernet_postgres18_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d membernet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   membernet:
-    build: ./Backend
+    build:
+      context: ./Backend
     ports:
       - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/membernet
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  membernet_postgres18_data:
