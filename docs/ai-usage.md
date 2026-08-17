@@ -17,9 +17,7 @@ process.
 - Planning tests
 - Creating documentation
 
-## Human Decisions
-
-The trainee decided to:
+## Decisions
 
 - Use Java 21 and Spring Boot
 - Use PostgreSQL instead of keeping mock accounts
@@ -30,7 +28,7 @@ The trainee decided to:
 - Use numeric member IDs
 - Verify functionality using pgAdmin and browser tests
 
-## Human Verification
+## Code Verification
 
 AI suggestions were not accepted without verification. The
 trainee:
