@@ -58,9 +58,7 @@ Open [http://localhost:8080](http://localhost:8080).
 
 ```powershell
 cd Backend
-mvn test
-mvn package
-docker build -t membernet:latest .
+mvn spring-boot:run.
 ````
 
 Or, after packaging, run `docker compose up --build` from the repository root.
