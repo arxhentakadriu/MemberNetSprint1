@@ -1,7 +1,14 @@
 package com.membernet.auth;
 
-import com.membernet.user.Role;
-import java.util.Set;
+import java.util.UUID;
 
-public record LoginResponse(String message, String username, String displayName, String memberId,
-                            Set<Role> roles, String homePage) { }
+import com.membernet.user.AccountStatus;
+
+public record LoginResponse(
+        String message,
+        UUID userAccountId,
+        String loginEmail,
+        String displayName,
+        AccountStatus accountStatus,
+        String homePage) {
+}

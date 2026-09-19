@@ -1,13 +1,16 @@
 package com.membernet.config;
 
-import java.util.Set;
+import java.time.ZoneId;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.StringUtils;
 
-import com.membernet.user.Role;
+import com.membernet.user.AccountStatus;
+import com.membernet.user.EventViewPreference;
 import com.membernet.user.SpringDataUserAccountRepository;
 import com.membernet.user.UserAccountEntity;
 
@@ -15,65 +18,51 @@ import com.membernet.user.UserAccountEntity;
 public class DatabaseInitializer {
 
     @Bean
-    CommandLineRunner initializeUsers(
-            SpringDataUserAccountRepository repository,
-            PasswordEncoder passwordEncoder) {
-
-        return args -> {
-            createUserIfMissing(
-                    repository,
-                    passwordEncoder,
-                    "member",
-                    "member123",
-                    "Member",
-                    "1001",
-                    Set.of(Role.MEMBER)
-            );
-
-            createUserIfMissing(
-                    repository,
-                    passwordEncoder,
-                    "admin",
-                    "admin123",
-                    "Administrator",
-                    "0001",
-                    Set.of(Role.MEMBER, Role.ADMIN)
-            );
-            createUserIfMissing(
-                    repository,
-                    passwordEncoder,
-                    "arxhenta",
-                    "silver",
-                    "Administrator",
-                    "0002",
-                    Set.of(Role.MEMBER, Role.ADMIN)
-            );
-        };
-    }
-
-    private void createUserIfMissing(
+    CommandLineRunner initializeUserAccounts(
             SpringDataUserAccountRepository repository,
             PasswordEncoder passwordEncoder,
-            String username,
-            String password,
-            String displayName,
-            String memberId,
-            Set<Role> roles) {
+            @Value("${app.bootstrap.admin.email:}") String adminEmail,
+            @Value("${app.bootstrap.admin.password:}") String adminPassword,
+            @Value("${app.bootstrap.admin.first-name:Admin}") String firstName,
+            @Value("${app.bootstrap.admin.last-name:User}") String lastName) {
 
-        if (!repository.existsByUsernameIgnoreCase(username)) {
-            UserAccountEntity user = new UserAccountEntity(
-                    username,
-                    passwordEncoder.encode(password),
-                    displayName,
-                    memberId,
-                    roles
+        return args -> {
+            if (!StringUtils.hasText(adminEmail)
+                    || !StringUtils.hasText(adminPassword)) {
+
+                System.out.println(
+                        "Bootstrap admin was not created. "
+                        + "ADMIN_EMAIL and ADMIN_PASSWORD are not configured."
+                );
+
+                return;
+            }
+
+            String normalizedEmail = adminEmail.trim().toLowerCase();
+
+            if (repository.existsByLoginEmailIgnoreCase(normalizedEmail)) {
+                return;
+            }
+
+            UserAccountEntity admin = new UserAccountEntity(
+                    normalizedEmail,
+                    normalizedEmail,
+                    passwordEncoder.encode(adminPassword),
+                    firstName,
+                    lastName,
+                    null,
+                    AccountStatus.ACTIVE,
+                    "en",
+                    ZoneId.systemDefault().getId(),
+                    EventViewPreference.LIST
             );
 
-            repository.save(user);
+            repository.save(admin);
 
             System.out.println(
-                    "Database user created: " + username
+                    "Bootstrap administrator account created: "
+                    + normalizedEmail
             );
-        }
+        };
     }
 }

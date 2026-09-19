@@ -21,19 +21,20 @@ public class PostgresUserAccountRepository
     }
 
     @Override
-    public Optional<UserAccount> findByUsername(String username) {
+    public Optional<UserAccount> findByLoginEmail(String loginEmail) {
         return repository
-                .findByUsernameIgnoreCase(username)
+                .findByLoginEmailIgnoreCase(normalizeEmail(loginEmail))
                 .map(this::toUserAccount);
     }
 
     @Override
     public boolean credentialsMatch(
-            String username,
+            String loginEmail,
             String password) {
 
         return repository
-                .findByUsernameIgnoreCase(username)
+                .findByLoginEmailIgnoreCase(normalizeEmail(loginEmail))
+                .filter(user -> user.getAccountStatus() == AccountStatus.ACTIVE)
                 .map(user -> passwordEncoder.matches(
                         password,
                         user.getPasswordHash()
@@ -43,10 +44,15 @@ public class PostgresUserAccountRepository
 
     private UserAccount toUserAccount(UserAccountEntity entity) {
         return new UserAccount(
-                entity.getUsername(),
-                entity.getDisplayName(),
-                entity.getMemberId(),
-                entity.getRoles()
+                entity.getId(),
+                entity.getLoginEmail(),
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getAccountStatus()
         );
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase();
     }
 }

@@ -1,22 +1,38 @@
 package com.membernet.auth;
 
-import com.membernet.user.Role;
+import org.springframework.stereotype.Service;
+
 import com.membernet.user.UserAccount;
 import com.membernet.user.UserAccountRepository;
-import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticationService {
+
     private final UserAccountRepository accounts;
-    public AuthenticationService(UserAccountRepository accounts) { this.accounts = accounts; }
+
+    public AuthenticationService(UserAccountRepository accounts) {
+        this.accounts = accounts;
+    }
 
     public LoginResponse authenticate(LoginRequest request) {
-        if (!accounts.credentialsMatch(request.username(), request.password())) {
+        String loginEmail = request.loginEmail().trim().toLowerCase();
+
+        if (!accounts.credentialsMatch(loginEmail, request.password())) {
             throw new InvalidCredentialsException();
         }
-        UserAccount account = accounts.findByUsername(request.username()).orElseThrow(InvalidCredentialsException::new);
-        String homePage = account.roles().contains(Role.ADMIN) ? "Administrator dashboard" : "Member home";
-        return new LoginResponse("Login successful. Welcome, " + account.displayName() + ".", account.username(),
-                account.displayName(), account.memberId(), account.roles(), homePage);
+
+        UserAccount account = accounts
+                .findByLoginEmail(loginEmail)
+                .filter(UserAccount::isActive)
+                .orElseThrow(InvalidCredentialsException::new);
+
+        return new LoginResponse(
+                "Login successful. Welcome, " + account.displayName() + ".",
+                account.id(),
+                account.loginEmail(),
+                account.displayName(),
+                account.accountStatus(),
+                "MemberNet home"
+        );
     }
 }
