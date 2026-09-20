@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.membernet.association.AssociationNotFoundException;
 import com.membernet.association.DuplicateAssociationException;
+import com.membernet.authorization.AuthorizationConflictException;
+import com.membernet.authorization.AuthorizationNotFoundException;
+import com.membernet.authorization.AuthorizationValidationException;
 import com.membernet.membership.DuplicateMembershipException;
 import com.membernet.membership.InvalidMembershipException;
 import com.membernet.membership.MembershipNotFoundException;
@@ -19,7 +22,9 @@ public class ApiErrorHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    Map<String, String> validation(MethodArgumentNotValidException error) {
+    Map<String, String> validation(
+            MethodArgumentNotValidException error) {
+
         String message = error.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -75,6 +80,30 @@ public class ApiErrorHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     Map<String, String> membershipNotFound(
             MembershipNotFoundException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(AuthorizationConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    Map<String, String> authorizationConflict(
+            AuthorizationConflictException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(AuthorizationNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    Map<String, String> authorizationNotFound(
+            AuthorizationNotFoundException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(AuthorizationValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    Map<String, String> authorizationValidation(
+            AuthorizationValidationException error) {
 
         return Map.of("message", error.getMessage());
     }
