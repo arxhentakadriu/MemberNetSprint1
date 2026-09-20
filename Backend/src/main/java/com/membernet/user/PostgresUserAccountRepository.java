@@ -1,6 +1,7 @@
 package com.membernet.user;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
@@ -21,10 +22,20 @@ public class PostgresUserAccountRepository
     }
 
     @Override
-    public Optional<UserAccount> findByLoginEmail(String loginEmail) {
-        return repository
-                .findByLoginEmailIgnoreCase(normalizeEmail(loginEmail))
+    public Optional<UserAccount> findById(UUID id) {
+        return repository.findById(id)
                 .map(this::toUserAccount);
+    }
+
+    @Override
+    public Optional<UserAccount> findByLoginEmail(String loginEmail) {
+        return repository.findByLoginEmailIgnoreCase(loginEmail)
+                .map(this::toUserAccount);
+    }
+
+    @Override
+    public boolean existsById(UUID id) {
+        return repository.existsById(id);
     }
 
     @Override
@@ -32,8 +43,7 @@ public class PostgresUserAccountRepository
             String loginEmail,
             String password) {
 
-        return repository
-                .findByLoginEmailIgnoreCase(normalizeEmail(loginEmail))
+        return repository.findByLoginEmailIgnoreCase(loginEmail)
                 .filter(user -> user.getAccountStatus() == AccountStatus.ACTIVE)
                 .map(user -> passwordEncoder.matches(
                         password,
@@ -50,9 +60,5 @@ public class PostgresUserAccountRepository
                 entity.getLastName(),
                 entity.getAccountStatus()
         );
-    }
-
-    private String normalizeEmail(String email) {
-        return email.trim().toLowerCase();
     }
 }

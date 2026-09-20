@@ -1,7 +1,8 @@
 package com.membernet.user;
 
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -26,10 +27,7 @@ public class UserAccountEntity {
     @Column(name = "login_email", nullable = false, unique = true, length = 255)
     private String loginEmail;
 
-    @Column(name = "contact_email", length = 255)
-    private String contactEmail;
-
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @Column(name = "first_name", nullable = false, length = 100)
@@ -37,6 +35,9 @@ public class UserAccountEntity {
 
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
+
+    @Column(name = "contact_email", length = 255)
+    private String contactEmail;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
@@ -52,35 +53,36 @@ public class UserAccountEntity {
     private String timeZone;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "event_view_preference", nullable = false, length = 20)
+    @Column(name = "event_view_preference", nullable = false, length = 30)
     private EventViewPreference eventViewPreference;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+    private OffsetDateTime updatedAt;
 
     protected UserAccountEntity() {
+        // Required by JPA.
     }
 
     public UserAccountEntity(
             String loginEmail,
-            String contactEmail,
             String passwordHash,
             String firstName,
             String lastName,
+            String contactEmail,
             LocalDate dateOfBirth,
             AccountStatus accountStatus,
             String languageCode,
             String timeZone,
             EventViewPreference eventViewPreference) {
 
-        this.loginEmail = normalizeEmail(loginEmail);
-        this.contactEmail = normalizeNullableEmail(contactEmail);
+        this.loginEmail = loginEmail;
         this.passwordHash = passwordHash;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.contactEmail = contactEmail;
         this.dateOfBirth = dateOfBirth;
         this.accountStatus = accountStatus;
         this.languageCode = languageCode;
@@ -90,26 +92,31 @@ public class UserAccountEntity {
 
     @PrePersist
     void beforeInsert() {
-        Instant now = Instant.now();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+        if (accountStatus == null) {
+            accountStatus = AccountStatus.ACTIVE;
+        }
+
+        if (languageCode == null || languageCode.isBlank()) {
+            languageCode = "en";
+        }
+
+        if (timeZone == null || timeZone.isBlank()) {
+            timeZone = "UTC";
+        }
+
+        if (eventViewPreference == null) {
+            eventViewPreference = EventViewPreference.LIST;
+        }
+
         createdAt = now;
         updatedAt = now;
     }
 
     @PreUpdate
     void beforeUpdate() {
-        updatedAt = Instant.now();
-    }
-
-    private static String normalizeEmail(String email) {
-        return email.trim().toLowerCase();
-    }
-
-    private static String normalizeNullableEmail(String email) {
-        if (email == null || email.isBlank()) {
-            return null;
-        }
-
-        return normalizeEmail(email);
+        updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
 
     public UUID getId() {
@@ -118,10 +125,6 @@ public class UserAccountEntity {
 
     public String getLoginEmail() {
         return loginEmail;
-    }
-
-    public String getContactEmail() {
-        return contactEmail;
     }
 
     public String getPasswordHash() {
@@ -134,6 +137,10 @@ public class UserAccountEntity {
 
     public String getLastName() {
         return lastName;
+    }
+
+    public String getContactEmail() {
+        return contactEmail;
     }
 
     public LocalDate getDateOfBirth() {
@@ -156,11 +163,11 @@ public class UserAccountEntity {
         return eventViewPreference;
     }
 
-    public Instant getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public Instant getUpdatedAt() {
+    public OffsetDateTime getUpdatedAt() {
         return updatedAt;
     }
 }
