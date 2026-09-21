@@ -1,0 +1,25 @@
+package com.membernet.membership;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface SpringDataMembershipRepository
+        extends JpaRepository<MembershipEntity, UUID> {
+
+    Optional<MembershipEntity> findByUserAccountIdAndAssociationId(
+            UUID userAccountId,
+            UUID associationId
+    );
+
+    List<MembershipEntity> findAllByUserAccountId(UUID userAccountId);
+
+    List<MembershipEntity> findAllByAssociationId(UUID associationId);
+
+    boolean existsByUserAccountIdAndAssociationId(
+            UUID userAccountId,
+            UUID associationId
+    );
+}

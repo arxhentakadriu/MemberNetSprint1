@@ -1,14 +1,16 @@
+name: membernet-sprint2
+
 services:
   postgres:
     image: postgres:18
     environment:
-      POSTGRES_DB: membernet
+      POSTGRES_DB: membernet_sprint2
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - membernet_postgres18_data:/var/lib/postgresql
+      - membernet_sprint2_postgres18_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d membernet"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d membernet_sprint2"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -20,13 +22,18 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/membernet
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      DB_URL: jdbc:postgresql://postgres:5432/membernet_sprint2
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  membernet_postgres18_data:
+  membernet_sprint2_postgres18_data:

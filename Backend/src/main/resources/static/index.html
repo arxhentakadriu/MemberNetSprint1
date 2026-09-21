@@ -6,59 +6,176 @@
     <title>MemberNet</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
+
   <body>
     <main class="shell">
-      <section id="login-panel" class="card" aria-labelledby="login-title">
+      <section
+        id="login-panel"
+        class="card login-card"
+        aria-labelledby="login-title"
+      >
         <p class="eyebrow">MEMBERNET</p>
         <h1 id="login-title">Login</h1>
         <p class="intro">Access your membership account securely.</p>
+
         <form id="login-form" novalidate>
-          <label for="username">Username</label
-          ><input
-            id="username"
-            name="username"
+          <label for="login-email">Email address</label>
+          <input
+            id="login-email"
+            name="loginEmail"
+            type="email"
             autocomplete="username"
+            placeholder="admin@example.com"
             required
           />
-          <label for="password">Password</label
-          ><input
+
+          <label for="password">Password</label>
+          <input
             id="password"
             name="password"
             type="password"
             autocomplete="current-password"
             required
           />
+
           <p
             id="form-message"
             class="message"
             role="alert"
             aria-live="polite"
           ></p>
+
           <button id="login-button" type="submit">Login</button>
         </form>
       </section>
-      <section id="home-panel" class="card hidden" aria-live="polite">
-        <div class="home-header">
+
+      <section
+        id="application-panel"
+        class="application hidden"
+        aria-live="polite"
+      >
+        <header class="application-header">
           <div>
             <p class="eyebrow">MEMBERNET</p>
-            <h1 id="welcome-title"></h1>
+            <h1 id="welcome-title">Welcome</h1>
           </div>
-          <button id="logout-button" class="secondary">Log out</button>
+
+          <button id="logout-button" class="secondary" type="button">
+            Log out
+          </button>
+        </header>
+
+        <div
+          id="application-message"
+          class="message"
+          role="alert"
+          aria-live="polite"
+        ></div>
+
+        <div class="application-layout">
+          <nav class="navigation" aria-label="Main navigation">
+            <button
+              class="navigation-item active"
+              type="button"
+              data-section="overview"
+            >
+              Overview
+            </button>
+
+            <button
+              class="navigation-item"
+              type="button"
+              data-section="memberships"
+            >
+              Memberships
+            </button>
+
+            <button
+              class="navigation-item"
+              type="button"
+              data-section="associations"
+            >
+              Associations
+            </button>
+
+            <button
+              class="navigation-item"
+              type="button"
+              data-section="payments"
+            >
+              Payments
+            </button>
+
+            <button
+              class="navigation-item"
+              type="button"
+              data-section="guardianships"
+            >
+              Guardianships
+            </button>
+          </nav>
+
+          <section class="content-card">
+            <div id="overview-section" class="content-section">
+              <div class="success" role="status">
+                <span aria-hidden="true">&#10003;</span>
+                Authentication completed successfully
+              </div>
+
+              <h2 id="home-page">MemberNet home</h2>
+
+              <dl class="account-details">
+                <div>
+                  <dt>User account ID</dt>
+                  <dd id="user-account-id">—</dd>
+                </div>
+
+                <div>
+                  <dt>Email</dt>
+                  <dd id="account-email">—</dd>
+                </div>
+
+                <div>
+                  <dt>Display name</dt>
+                  <dd id="display-name">—</dd>
+                </div>
+
+                <div>
+                  <dt>Account status</dt>
+                  <dd>
+                    <span id="account-status" class="status"> — </span>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div id="memberships-section" class="content-section hidden">
+              <h2>Memberships</h2>
+              <p>
+                Membership management is available through the MemberNet REST
+                API.
+              </p>
+            </div>
+
+            <div id="associations-section" class="content-section hidden">
+              <h2>Associations</h2>
+              <p>Create and manage associations and their details.</p>
+            </div>
+
+            <div id="payments-section" class="content-section hidden">
+              <h2>Payments</h2>
+              <p>Review payment obligations and payment status.</p>
+            </div>
+
+            <div id="guardianships-section" class="content-section hidden">
+              <h2>Guardianships</h2>
+              <p>Manage guardian and child account relationships.</p>
+            </div>
+          </section>
         </div>
-        <div class="success" role="status">✓ Login completed successfully</div>
-        <h2 id="home-page"></h2>
-        <dl>
-          <div>
-            <dt>Member ID</dt>
-            <dd id="member-id"></dd>
-          </div>
-          <div>
-            <dt>Permissions</dt>
-            <dd id="roles"></dd>
-          </div>
-        </dl>
       </section>
     </main>
-    <script src="/app.js"></script>
+
+    <script src="/app.js?v=3"></script>
   </body>
 </html>

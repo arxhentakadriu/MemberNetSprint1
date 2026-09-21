@@ -1,6 +1,7 @@
 package com.membernet.user;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
@@ -21,19 +22,29 @@ public class PostgresUserAccountRepository
     }
 
     @Override
-    public Optional<UserAccount> findByUsername(String username) {
-        return repository
-                .findByUsernameIgnoreCase(username)
+    public Optional<UserAccount> findById(UUID id) {
+        return repository.findById(id)
                 .map(this::toUserAccount);
     }
 
     @Override
+    public Optional<UserAccount> findByLoginEmail(String loginEmail) {
+        return repository.findByLoginEmailIgnoreCase(loginEmail)
+                .map(this::toUserAccount);
+    }
+
+    @Override
+    public boolean existsById(UUID id) {
+        return repository.existsById(id);
+    }
+
+    @Override
     public boolean credentialsMatch(
-            String username,
+            String loginEmail,
             String password) {
 
-        return repository
-                .findByUsernameIgnoreCase(username)
+        return repository.findByLoginEmailIgnoreCase(loginEmail)
+                .filter(user -> user.getAccountStatus() == AccountStatus.ACTIVE)
                 .map(user -> passwordEncoder.matches(
                         password,
                         user.getPasswordHash()
@@ -43,10 +54,11 @@ public class PostgresUserAccountRepository
 
     private UserAccount toUserAccount(UserAccountEntity entity) {
         return new UserAccount(
-                entity.getUsername(),
-                entity.getDisplayName(),
-                entity.getMemberId(),
-                entity.getRoles()
+                entity.getId(),
+                entity.getLoginEmail(),
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getAccountStatus()
         );
     }
 }

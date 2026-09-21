@@ -1,13 +1,14 @@
 package com.membernet.user;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SpringDataUserAccountRepository
-        extends JpaRepository<UserAccountEntity, Long> {
+        extends JpaRepository<UserAccountEntity, UUID> {
 
-    Optional<UserAccountEntity> findByUsernameIgnoreCase(String username);
+    Optional<UserAccountEntity> findByLoginEmailIgnoreCase(String loginEmail);
 
-    boolean existsByUsernameIgnoreCase(String username);
+    boolean existsByLoginEmailIgnoreCase(String loginEmail);
 }

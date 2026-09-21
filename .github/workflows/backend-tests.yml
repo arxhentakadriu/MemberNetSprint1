@@ -1,0 +1,70 @@
+name: Backend Tests
+
+on:
+  push:
+    branches:
+      - sprint2
+  pull_request:
+    branches:
+      - sprint2
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Maven and PostgreSQL Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: membernet_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d membernet_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    defaults:
+      run:
+        working-directory: Backend
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/membernet_test
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: test-password
+      DB_PASSWORD: test-password
+      SESSION_PROTECTION_ENABLED: "false"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: Backend/pom.xml
+
+      - name: Display Java version
+        run: java -version
+
+      - name: Run automated tests
+        run: mvn --batch-mode --no-transfer-progress clean test
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: membernet-test-reports
+          path: Backend/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,19 +1,19 @@
 package com.membernet.user;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.UUID;
 
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
@@ -21,68 +21,153 @@ import jakarta.persistence.Table;
 public class UserAccountEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String username;
+    @Column(name = "login_email", nullable = false, unique = true, length = 255)
+    private String loginEmail;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "display_name", nullable = false)
-    private String displayName;
+    @Column(name = "first_name", nullable = false, length = 100)
+    private String firstName;
 
-    @Column(name = "member_id", nullable = false, unique = true)
-    private String memberId;
+    @Column(name = "last_name", nullable = false, length = 100)
+    private String lastName;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "user_account_roles",
-            joinColumns = @JoinColumn(name = "user_account_id")
-    )
+    @Column(name = "contact_email", length = 255)
+    private String contactEmail;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private Set<Role> roles = new HashSet<>();
+    @Column(name = "account_status", nullable = false, length = 30)
+    private AccountStatus accountStatus;
+
+    @Column(name = "language_code", nullable = false, length = 10)
+    private String languageCode;
+
+    @Column(name = "time_zone", nullable = false, length = 100)
+    private String timeZone;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_view_preference", nullable = false, length = 30)
+    private EventViewPreference eventViewPreference;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 
     protected UserAccountEntity() {
+        // Required by JPA.
     }
 
     public UserAccountEntity(
-            String username,
+            String loginEmail,
             String passwordHash,
-            String displayName,
-            String memberId,
-            Set<Role> roles) {
+            String firstName,
+            String lastName,
+            String contactEmail,
+            LocalDate dateOfBirth,
+            AccountStatus accountStatus,
+            String languageCode,
+            String timeZone,
+            EventViewPreference eventViewPreference) {
 
-        this.username = username;
+        this.loginEmail = loginEmail;
         this.passwordHash = passwordHash;
-        this.displayName = displayName;
-        this.memberId = memberId;
-        this.roles = new HashSet<>(roles);
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.contactEmail = contactEmail;
+        this.dateOfBirth = dateOfBirth;
+        this.accountStatus = accountStatus;
+        this.languageCode = languageCode;
+        this.timeZone = timeZone;
+        this.eventViewPreference = eventViewPreference;
     }
 
-    public Long getId() {
+    @PrePersist
+    void beforeInsert() {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+        if (accountStatus == null) {
+            accountStatus = AccountStatus.ACTIVE;
+        }
+
+        if (languageCode == null || languageCode.isBlank()) {
+            languageCode = "en";
+        }
+
+        if (timeZone == null || timeZone.isBlank()) {
+            timeZone = "UTC";
+        }
+
+        if (eventViewPreference == null) {
+            eventViewPreference = EventViewPreference.LIST;
+        }
+
+        createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    void beforeUpdate() {
+        updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
+    }
+
+    public UUID getId() {
         return id;
     }
 
-    public String getUsername() {
-        return username;
+    public String getLoginEmail() {
+        return loginEmail;
     }
 
     public String getPasswordHash() {
         return passwordHash;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public String getMemberId() {
-        return memberId;
+    public String getLastName() {
+        return lastName;
     }
 
-    public Set<Role> getRoles() {
-        return Set.copyOf(roles);
+    public String getContactEmail() {
+        return contactEmail;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public AccountStatus getAccountStatus() {
+        return accountStatus;
+    }
+
+    public String getLanguageCode() {
+        return languageCode;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public EventViewPreference getEventViewPreference() {
+        return eventViewPreference;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }
