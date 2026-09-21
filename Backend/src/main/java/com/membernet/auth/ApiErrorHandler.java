@@ -13,6 +13,10 @@ import com.membernet.association.DuplicateAssociationException;
 import com.membernet.authorization.AuthorizationConflictException;
 import com.membernet.authorization.AuthorizationNotFoundException;
 import com.membernet.authorization.AuthorizationValidationException;
+import com.membernet.guardianship.DuplicateGuardianshipException;
+import com.membernet.guardianship.GuardianshipNotFoundException;
+import com.membernet.guardianship.InvalidGuardianshipException;
+import com.membernet.guardianship.UserAccountNotFoundException;
 import com.membernet.membership.DuplicateMembershipException;
 import com.membernet.membership.InvalidMembershipException;
 import com.membernet.membership.MembershipNotFoundException;
@@ -38,6 +42,7 @@ public class ApiErrorHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     Map<String, String> invalidCredentials() {
+
         return Map.of(
                 "message",
                 "The username or password is incorrect."
@@ -104,6 +109,38 @@ public class ApiErrorHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Map<String, String> authorizationValidation(
             AuthorizationValidationException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateGuardianshipException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    Map<String, String> duplicateGuardianship(
+            DuplicateGuardianshipException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(InvalidGuardianshipException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    Map<String, String> invalidGuardianship(
+            InvalidGuardianshipException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(GuardianshipNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    Map<String, String> guardianshipNotFound(
+            GuardianshipNotFoundException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(UserAccountNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    Map<String, String> userAccountNotFound(
+            UserAccountNotFoundException error) {
 
         return Map.of("message", error.getMessage());
     }
