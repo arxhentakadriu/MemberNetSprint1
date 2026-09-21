@@ -1,210 +1,340 @@
-# MemberNet Sprint 1
+# MemberNet Sprint 2
 
 MemberNet is a browser-based membership management application developed as part of the MemberNet AI Developer Training Project.
 
-Sprint 1 demonstrates a complete authentication workflow using Java, Spring Boot, PostgreSQL and Docker.
+Sprint 2 extends the authentication workflow from Sprint 1 with association management, memberships, authorization, guardianship relationships, payment obligations, API documentation, session protection, Docker Compose and Kubernetes deployment.
 
 ## Features
 
-* Browser-based login page
-* Username and password authentication
-* PostgreSQL account persistence
-* BCrypt password hashing
-* MEMBER and ADMIN roles
-* Role-based home pages
-* Account information display
-* Meaningful validation and login errors
-* Successful login confirmation
-* Logout functionality
-* Automated controller tests
-* Spring Boot Actuator health endpoint
-* Docker and Docker Compose support
-* Environment-based database configuration
-* Layered software architecture
+- Login with email and password
+- BCrypt password hashing
+- Session-based authentication
+- Protected REST API endpoints
+- Logout and session invalidation
+- User account persistence
+- Association management
+- Membership management
+- Roles and permissions
+- Membership-role assignment
+- Guardianship relationships
+- Payment obligations
+- Payment status history
+- Request validation and consistent API errors
+- PostgreSQL persistence
+- Flyway database migrations
+- Swagger/OpenAPI documentation
+- Spring Boot Actuator health probes
+- Docker and Docker Compose support
+- Kubernetes deployment configuration
+- Automated integration tests
 
 ## Technologies
 
-* Java 21
-* Spring Boot 3
-* Maven
-* Spring Data JPA
-* PostgreSQL 18
-* BCrypt
-* HTML
-* CSS
-* JavaScript
-* Docker
-* Docker Compose
-* Spring Boot Actuator
-* JUnit
-* Mockito
-* Git and GitHub
+- Java 21
+- Spring Boot 3.5
+- Maven
+- Spring Web MVC
+- Spring Data JPA
+- Jakarta Validation
+- PostgreSQL 18
+- Flyway
+- BCrypt
+- Spring Boot Actuator
+- Springdoc OpenAPI and Swagger UI
+- HTML, CSS and JavaScript
+- Docker and Docker Compose
+- Kubernetes
+- JUnit 5
+- MockMvc
+- Git and GitHub
 
 ## Architecture
 
-MemberNet follows a layered software architecture:
+MemberNet follows a layered architecture:
 
-```
-Browser Interface
-       |
-       v
-AuthenticationController
-       |
-       v
-AuthenticationService
-       |
-       v
-UserAccountRepository
-       |
-       v
+```text
+Browser / Swagger UI
+        |
+        v
+REST Controllers
+        |
+        v
+Application Services
+        |
+        v
+Repositories
+        |
+        v
 PostgreSQL
 ```
 
-The main layers are:
+Main layers:
 
-* **Presentation layer:** HTML, CSS and JavaScript
-* **Controller layer:** receives REST requests
-* **Service layer:** performs authentication and role-based decisions
-* **Repository layer:** communicates with PostgreSQL
-* **Database layer:** stores accounts, password hashes and roles
+- **Presentation layer:** HTML, CSS and JavaScript
+- **Controller layer:** REST endpoints and request validation
+- **Service layer:** business rules and workflow processing
+- **Repository layer:** Spring Data JPA database access
+- **Database layer:** PostgreSQL schema managed by Flyway
+- **Infrastructure layer:** Docker, Kubernetes and Actuator
 
-## User Roles
+## Main Modules
 
-### MEMBER
+### Authentication
 
-A member can authenticate and access the Member home page.
+Provides:
 
-### ADMIN
+- Login through `POST /api/auth/login`
+- Current session through `GET /api/auth/session`
+- Logout through `POST /api/auth/logout`
+- Session-based protection for `/api/**` endpoints
+- BCrypt password verification
 
-An administrator can authenticate and access the Administrator dashboard.
+### Associations
 
-ADMIN accounts contain both `ADMIN` and `MEMBER` permissions.
+Provides creation and retrieval of associations.
+
+Base endpoint:
+
+```text
+/api/associations
+```
+
+### Memberships
+
+Connects user accounts with associations and manages membership validity and status.
+
+Base endpoint:
+
+```text
+/api/memberships
+```
+
+### Authorization
+
+Provides:
+
+- Roles
+- Permissions
+- Role-permission assignment
+- Membership-role assignment
+
+Base endpoint:
+
+```text
+/api/authorization
+```
+
+### Guardianships
+
+Manages relationships between guardian and child user accounts.
+
+Base endpoint:
+
+```text
+/api/guardianships
+```
+
+Supported statuses include:
+
+- `PENDING`
+- `ACTIVE`
+- `REJECTED`
+- `EXPIRED`
+- `TERMINATED`
+
+### Payments
+
+Manages payment obligations and payment status history.
+
+Base endpoint:
+
+```text
+/api/payments
+```
+
+Supported statuses include:
+
+- `OPEN`
+- `PAID`
+- `OVERDUE`
+- `CANCELLED`
+
+## Database Migrations
+
+The PostgreSQL schema is managed by Flyway.
+
+Migration files:
+
+```text
+Backend/src/main/resources/db/migration/
+├── V1__create_sprint2_core_schema.sql
+├── V2__create_guardianship_relationships.sql
+└── V3__create_payment_obligations.sql
+```
+
+The migrations create the core tables for:
+
+- User accounts
+- Associations
+- Memberships
+- Roles
+- Permissions
+- Membership roles
+- Role permissions
+- Guardianship relationships
+- Payment obligations
+- Payment status history
 
 ## Project Structure
 
-```
-membernet-sprint1/
+```text
+MemberNet-Sprint1/
 ├── Backend/
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/membernet/
+│   │   │   │   ├── association/
 │   │   │   │   ├── auth/
+│   │   │   │   ├── authorization/
 │   │   │   │   ├── config/
+│   │   │   │   ├── guardianship/
+│   │   │   │   ├── membership/
+│   │   │   │   ├── payment/
 │   │   │   │   ├── user/
 │   │   │   │   └── MemberNetApplication.java
 │   │   │   └── resources/
+│   │   │       ├── db/migration/
 │   │   │       ├── static/
-│   │   │       │   ├── index.html
-│   │   │       │   ├── styles.css
-│   │   │       │   └── app.js
-│   │   │       └── application.properties
+│   │   │       ├── application.properties
+│   │   │       └── application.yml
 │   │   └── test/
 │   ├── Dockerfile
 │   └── pom.xml
 ├── docs/
+│   └── sprint2/
+├── k8s/
+│   └── sprint2/
+├── .env.example
 ├── .gitignore
 ├── docker-compose.yml
 └── README.md
 ```
 
-## Prerequisites
+## Environment Configuration
 
-For local development, install:
-
-* Java 21
-* Maven
-* PostgreSQL 18
-* Git
-* A browser
-* VS Code or another IDE
-
-For container-based execution, also install:
-
-* Docker Desktop
-* Docker Compose
-
-Check the installations:
+Create the local environment file from the example:
 
 ```powershell
-java -version
-mvn -version
-git --version
-docker --version
-docker compose version
+Copy-Item .\.env.example .\.env
+notepad .\.env
 ```
 
-# Running Locally
+Configure values similar to:
 
-## 1. Create the PostgreSQL Database
-
-Open pgAdmin and create a database with these values:
-
-```
-Database name: membernet
-Owner: postgres
-Host: localhost
-Port: 5432
+```dotenv
+DB_PASSWORD=replace-with-a-secure-password
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=replace-with-a-secure-admin-password
+ADMIN_FIRST_NAME=Admin
+ADMIN_LAST_NAME=User
 ```
 
-Alternatively, create it using SQL:
+Never commit `.env`. It is excluded through `.gitignore`.
 
-```sql
-CREATE DATABASE membernet;
-```
+## Running Automated Tests
 
-The application automatically creates the required tables through Spring Data JPA.
+Start the PostgreSQL test container if it is not already running.
 
-## 2. Configure the Database Password
-
-The PostgreSQL password must not be stored directly in Git.
-
-The application reads it from the `DB_PASSWORD` environment variable.
-
-In PowerShell:
+From `Backend`, configure the test datasource:
 
 ```powershell
-$env:DB_PASSWORD=''
+$dbPasswordLine = Get-Content ..\.env |
+    Where-Object { $_ -like "DB_PASSWORD=*" } |
+    Select-Object -First 1
+
+$env:DB_PASSWORD = $dbPasswordLine.Substring("DB_PASSWORD=".Length)
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5433/membernet_test"
+$env:SPRING_DATASOURCE_USERNAME = "postgres"
+$env:SPRING_DATASOURCE_PASSWORD = $env:DB_PASSWORD
 ```
 
-## 3. Open the Backend Directory
+Run:
+
+```powershell
+mvn clean test
+```
+
+Verified result:
+
+```text
+Tests run: 23, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+## Running Locally
+
+Open the backend directory:
 
 ```powershell
 cd Backend
 ```
 
-## 4. Build and Test the Application
+Set the required environment variables:
 
 ```powershell
-mvn clean install
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5433/membernet_test"
+$env:SPRING_DATASOURCE_USERNAME = "postgres"
+$env:SPRING_DATASOURCE_PASSWORD = $env:DB_PASSWORD
+$env:SESSION_PROTECTION_ENABLED = "true"
 ```
 
-A successful build should end with:
-
-```
-BUILD SUCCESS
-```
-
-## 5. Start the Application
+Start the application:
 
 ```powershell
 mvn spring-boot:run
 ```
 
-Keep the terminal open while the application is running.
-
-## 6. Open MemberNet
-
-Open the following URL:
-
-http://localhost:8080
-
-## 7. Check Application Health
-
 Open:
 
-http://localhost:8080/actuator/health
+```text
+http://localhost:8080
+```
 
-Expected response:
+## API Documentation
+
+When the application is running, Swagger UI is available at:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+The OpenAPI document is available at:
+
+```text
+http://localhost:8080/v3/api-docs
+```
+
+## Health Monitoring
+
+General health:
+
+```text
+GET /actuator/health
+```
+
+Kubernetes readiness:
+
+```text
+GET /actuator/health/readiness
+```
+
+Kubernetes liveness:
+
+```text
+GET /actuator/health/liveness
+```
+
+Expected healthy response:
 
 ```json
 {
@@ -212,32 +342,9 @@ Expected response:
 }
 ```
 
-## 8. Stop the Application
+## Running with Docker Compose
 
-Return to the terminal and press:
-
-```
-Ctrl + C
-```
-
-# Running with Docker Compose
-
-Docker Compose starts two services:
-
-* `membernet` - the Spring Boot application
-* `postgres` - the PostgreSQL 18 database
-
-## 1. Open the Repository Root
-
-If the terminal is inside `Backend`, return to the root:
-
-```powershell
-cd ..
-```
-
-## 2. Build the JAR File
-
-The Dockerfile copies the Maven-generated JAR file, so build it before starting Docker:
+Build the application JAR:
 
 ```powershell
 cd Backend
@@ -245,241 +352,150 @@ mvn clean package
 cd ..
 ```
 
-## 3. Set the Docker Database Password
-
-```powershell
-$env:DB_PASSWORD=''
-```
-Use a strong test password and do not store it directly in `docker-compose.yml`.
-
-## 4. Validate Docker Compose
+Validate the Compose configuration:
 
 ```powershell
 docker compose config
 ```
 
-This command should complete without configuration errors.
-
-## 5. Build and Start the Containers
+Start the services:
 
 ```powershell
 docker compose up --build
 ```
 
-Wait until PostgreSQL becomes healthy and MemberNet displays a message similar to:
-
-```
-Tomcat started on port 8080
-Started MemberNetApplication
-```
-
-## 6. Test the Docker Application
-
-Open:
-
-http://localhost:8080
-
-Check the health endpoint:
-
-http://localhost:8080/actuator/health
-
-## 7. Check Container Status
-
-Open another PowerShell terminal in the repository root:
+Check their status:
 
 ```powershell
 docker compose ps
 ```
 
-The MemberNet container should be running and PostgreSQL should be healthy.
-
-## 8. View Container Logs
-
-Application logs:
-
-```powershell
-docker compose logs membernet
-```
-
-PostgreSQL logs:
-
-```powershell
-docker compose logs postgres
-```
-
-Follow logs continuously:
+Follow the logs:
 
 ```powershell
 docker compose logs -f
 ```
 
-## 9. Stop Docker Compose
+Stop the services:
 
 ```powershell
 docker compose down
 ```
 
-This removes the containers and Docker network but preserves the PostgreSQL volume.
+The PostgreSQL volume is preserved unless volumes are explicitly removed.
 
-# Demonstration Accounts
+## Kubernetes Deployment
 
-The application creates demonstration accounts through `DatabaseInitializer` when they do not already exist.
+Kubernetes manifests are located in:
 
-Example MEMBER account:
-
-```
-Username: member
-Password: member123
-```
-
-Example ADMIN account:
-
-```
-Username: admin
-Password: admin123
+```text
+k8s/sprint2/
+├── membernet-sprint2.yaml
+└── secret.example.yaml
 ```
 
-These credentials are for training and testing only. They must not be used in production.
+The real secret is created locally from `.env` and must not be committed.
 
-# API Example
-
-## Login Request
-
-Example endpoint:
-
-```
-POST /api/auth/login
-```
-
-Example JSON request:
-
-```json
-{
-  "username": "member",
-  "password": "member123"
-}
-```
-
-Example successful response:
-
-```json
-{
-  "message": "Login successful.",
-  "username": "member",
-  "displayName": "Member",
-  "memberId": "1001",
-  "roles": [
-    "MEMBER"
-  ],
-  "homePage": "Member home"
-}
-```
-
-The exact display name can depend on the account data stored in PostgreSQL.
-
-# Testing
-
-## Automated Tests
-
-Run:
+Create the namespace:
 
 ```powershell
-cd Backend
-$env:DB_PASSWORD='YOUR_POSTGRESQL_PASSWORD'
-mvn clean test
+kubectl create namespace membernet
 ```
 
-Or build and test together:
+Create or update the secret:
 
 ```powershell
-mvn clean install
+kubectl create secret generic membernet-secrets `
+  --namespace membernet `
+  --from-env-file=.\.env `
+  --dry-run=client `
+  -o yaml |
+kubectl apply -f -
 ```
 
-The final verified result was:
+Validate the manifest:
 
-```
-Tests run: 2
-Failures: 0
-Errors: 0
-Skipped: 0
-BUILD SUCCESS
+```powershell
+kubectl apply --dry-run=client `
+  -f .\k8s\sprint2\membernet-sprint2.yaml
 ```
 
-## Manual Tests
+Apply it:
 
-The following cases should be verified:
-
-* Valid MEMBER login
-* Valid ADMIN login
-* Incorrect password
-* Unknown username
-* Empty username
-* Empty password
-* Account information display
-* Role and permission display
-* Successful login confirmation
-* Logout
-* Actuator health endpoint
-* Docker-based execution
-
-# Database
-
-The application uses two main tables:
-
-## `user_accounts`
-
-Stores:
-
-* ID
-* Username
-* BCrypt password hash
-* Display name
-* Member ID
-
-## `user_account_roles`
-
-Stores the roles assigned to each account:
-
-* `MEMBER`
-* `ADMIN`
-
-# Security
-
-Implemented security measures:
-
-* BCrypt password hashing
-* Generic invalid-credentials errors
-* Unique usernames and member IDs
-* Environment-based database passwords
-* Non-root user in the Docker container
-* Private GitHub repository during development
-
-
-# Monitoring
-
-Spring Boot Actuator provides the health endpoint:
-
-```
-GET /actuator/health
+```powershell
+kubectl apply `
+  -f .\k8s\sprint2\membernet-sprint2.yaml
 ```
 
-# Kubernetes
+Wait for the application rollout:
 
-Kubernetes deployment is planned for Sprint 2.
-
-Sprint 1 is prepared for future Kubernetes integration because it includes:
-
-* Docker container support
-* Environment-variable configuration
-* Port `8080`
-* Actuator health endpoint
-* Layered and stateless application design
-
-# Documentation
-
-Additional documentation is available in the `docs` directory:
-
+```powershell
+kubectl rollout status deployment/membernet `
+  -n membernet `
+  --timeout=180s
 ```
+
+Check resources:
+
+```powershell
+kubectl get all -n membernet
+kubectl get pvc -n membernet
+```
+
+Access the application locally:
+
+```powershell
+kubectl port-forward `
+  -n membernet `
+  service/membernet `
+  8081:8080
+```
+
+Open:
+
+```text
+http://localhost:8081
+```
+
+## Security
+
+Implemented security measures include:
+
+- BCrypt password hashing
+- Session-based authentication
+- Protected REST endpoints
+- Generic invalid-credential responses
+- Environment-based secret configuration
+- Kubernetes Secret usage
+- Non-root application container
+- Disabled privilege escalation
+- Read-only container root filesystem
+- Dropped Linux capabilities
+- Input validation
+- Database constraints
+
+## AI Usage
+
+AI assistance was used for:
+
+- Requirements analysis
+- Architecture planning
+- Technology evaluation
+- Implementation support
+- Database modelling
+- Flyway migration design
+- Debugging
+- Test planning
+- Docker and Kubernetes troubleshooting
+- Documentation improvement
+
+All generated suggestions were manually reviewed and verified through compilation, automated tests and runtime testing.
+
+## Documentation
+
+Project documentation is stored under:
+
+```text
 docs/
 ├── ai-usage.md
 ├── architecture.md
@@ -487,77 +503,25 @@ docs/
 ├── development-log.md
 ├── requirements.md
 ├── technical-decisions.md
-└── testing.md
+├── testing.md
+└── sprint2/
+    ├── 01-requirements-analysis.md
+    └── 02-architecture-design.md
 ```
 
-# AI Usage
+## Current Status
 
-AI was used for:
+Sprint 2 currently includes:
 
-* Requirements analysis
-* Technology evaluation
-* Architecture planning
-* Code generation support
-* PostgreSQL integration
-* Debugging
-* Code review
-* Test planning
-* Docker troubleshooting
-* Documentation improvement
-
-All important AI suggestions were manually reviewed and tested.
-
-# Git Workflow
-
-Check the current changes:
-
-```powershell
-git status
-```
-
-Stage changes:
-
-```powershell
-git add .
-```
-
-Create a commit:
-
-```powershell
-git commit -m "Finalize Sprint 1 implementation and documentation"
-```
-
-Push to GitHub:
-
-```powershell
-git push
-```
-
-Final verification:
-
-```powershell
-git status
-```
-
-Expected result:
-
-```
-On branch main
-Your branch is up to date with 'origin/main'.
-
-nothing to commit, working tree clean
-```
-
-# Current Status
-
-Sprint 1 includes:
-
-* Complete authentication workflow
-* PostgreSQL persistence
-* MEMBER and ADMIN authorization
-* Automated tests
-* Docker deployment
-* Health monitoring
-* GitHub repository
-* Technical and AI-use documentation
-
+- Complete authentication and session workflow
+- Associations and memberships
+- Roles and permissions
+- Guardianship relationships
+- Payment obligations and history
+- PostgreSQL and Flyway migrations
+- Swagger/OpenAPI documentation
+- 23 passing automated tests
+- Docker Compose deployment
+- Kubernetes deployment
+- Health monitoring
+- GitHub version control
