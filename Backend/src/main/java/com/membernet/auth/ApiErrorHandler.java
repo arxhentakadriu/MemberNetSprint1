@@ -20,6 +20,10 @@ import com.membernet.guardianship.UserAccountNotFoundException;
 import com.membernet.membership.DuplicateMembershipException;
 import com.membernet.membership.InvalidMembershipException;
 import com.membernet.membership.MembershipNotFoundException;
+import com.membernet.payment.DuplicatePaymentReferenceException;
+import com.membernet.payment.InvalidPaymentException;
+import com.membernet.payment.PaymentNotFoundException;
+import com.membernet.payment.PaymentResourceNotFoundException;
 
 @RestControllerAdvice
 public class ApiErrorHandler {
@@ -141,6 +145,38 @@ public class ApiErrorHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     Map<String, String> userAccountNotFound(
             UserAccountNotFoundException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(DuplicatePaymentReferenceException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    Map<String, String> duplicatePaymentReference(
+            DuplicatePaymentReferenceException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPaymentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    Map<String, String> invalidPayment(
+            InvalidPaymentException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(PaymentNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    Map<String, String> paymentNotFound(
+            PaymentNotFoundException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+
+    @ExceptionHandler(PaymentResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    Map<String, String> paymentResourceNotFound(
+            PaymentResourceNotFoundException error) {
 
         return Map.of("message", error.getMessage());
     }
