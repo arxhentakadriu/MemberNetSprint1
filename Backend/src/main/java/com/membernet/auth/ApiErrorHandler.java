@@ -180,4 +180,11 @@ public class ApiErrorHandler {
 
         return Map.of("message", error.getMessage());
     }
+    @ExceptionHandler(AuthenticationRequiredException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    Map<String, String> authenticationRequired(
+            AuthenticationRequiredException error) {
+
+        return Map.of("message", error.getMessage());
+    }
 }
