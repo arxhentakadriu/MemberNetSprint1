@@ -1,8 +1,12 @@
 # MemberNet Sprint 2
 
+[![Backend Tests](https://github.com/arxhentakadriu/MemberNetSprint1/actions/workflows/backend-tests.yml/badge.svg?branch=sprint2)](https://github.com/arxhentakadriu/MemberNetSprint1/actions/workflows/backend-tests.yml)
+
 MemberNet is a browser-based membership management application developed as part of the MemberNet AI Developer Training Project.
 
 Sprint 2 extends the authentication workflow from Sprint 1 with association management, memberships, authorization, guardianship relationships, payment obligations, API documentation, session protection, Docker Compose and Kubernetes deployment.
+
+## Features
 
 ## Features
 
