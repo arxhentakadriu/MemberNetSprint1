@@ -38,7 +38,8 @@ public class DatabaseInitializer {
                 return;
             }
 
-            String normalizedEmail = adminEmail.trim().toLowerCase();
+            String normalizedEmail =
+                    adminEmail.trim().toLowerCase();
 
             if (repository.existsByLoginEmailIgnoreCase(normalizedEmail)) {
                 return;
@@ -46,10 +47,10 @@ public class DatabaseInitializer {
 
             UserAccountEntity admin = new UserAccountEntity(
                     normalizedEmail,
-                    normalizedEmail,
                     passwordEncoder.encode(adminPassword),
                     firstName,
                     lastName,
+                    normalizedEmail,
                     null,
                     AccountStatus.ACTIVE,
                     "en",
