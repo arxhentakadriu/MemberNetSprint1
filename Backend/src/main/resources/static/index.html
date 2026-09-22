@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>MemberNet</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=4" />
   </head>
 
   <body>
@@ -25,7 +25,6 @@
             name="loginEmail"
             type="email"
             autocomplete="username"
-            placeholder="admin@example.com"
             required
           />
 
@@ -49,28 +48,33 @@
         </form>
       </section>
 
-      <section
-        id="application-panel"
-        class="application hidden"
-        aria-live="polite"
-      >
+      <section id="application-panel" class="application hidden">
         <header class="application-header">
           <div>
             <p class="eyebrow">MEMBERNET</p>
             <h1 id="welcome-title">Welcome</h1>
           </div>
 
-          <button id="logout-button" class="secondary" type="button">
-            Log out
-          </button>
+          <div class="header-actions">
+            <div class="group-context">
+              <label for="active-group">Active Group</label>
+              <select id="active-group">
+                <option value="">No active group</option>
+              </select>
+            </div>
+
+            <button id="logout-button" class="secondary" type="button">
+              Log out
+            </button>
+          </div>
         </header>
 
-        <div
+        <p
           id="application-message"
           class="message"
           role="alert"
           aria-live="polite"
-        ></div>
+        ></p>
 
         <div class="application-layout">
           <nav class="navigation" aria-label="Main navigation">
@@ -87,7 +91,7 @@
               type="button"
               data-section="memberships"
             >
-              Memberships
+              My Groups
             </button>
 
             <button
@@ -95,7 +99,7 @@
               type="button"
               data-section="associations"
             >
-              Associations
+              All Groups
             </button>
 
             <button
@@ -118,7 +122,6 @@
           <section class="content-card">
             <div id="overview-section" class="content-section">
               <div class="success" role="status">
-                <span aria-hidden="true">&#10003;</span>
                 Authentication completed successfully
               </div>
 
@@ -127,55 +130,153 @@
               <dl class="account-details">
                 <div>
                   <dt>User account ID</dt>
-                  <dd id="user-account-id">—</dd>
+                  <dd id="user-account-id">-</dd>
                 </div>
 
                 <div>
                   <dt>Email</dt>
-                  <dd id="account-email">—</dd>
+                  <dd id="account-email">-</dd>
                 </div>
 
                 <div>
                   <dt>Display name</dt>
-                  <dd id="display-name">—</dd>
+                  <dd id="display-name">-</dd>
                 </div>
 
                 <div>
                   <dt>Account status</dt>
-                  <dd>
-                    <span id="account-status" class="status"> — </span>
-                  </dd>
+                  <dd><span id="account-status" class="status">-</span></dd>
+                </div>
+
+                <div>
+                  <dt>Active Group</dt>
+                  <dd id="active-group-name">No active group</dd>
                 </div>
               </dl>
             </div>
 
             <div id="memberships-section" class="content-section hidden">
-              <h2>Memberships</h2>
-              <p>
-                Membership management is available through the MemberNet REST
-                API.
-              </p>
+              <div class="section-heading">
+                <div>
+                  <h2>My Groups</h2>
+                  <p>Groups available through your memberships.</p>
+                </div>
+
+                <button
+                  class="secondary refresh-button"
+                  type="button"
+                  data-refresh="memberships"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <p
+                id="memberships-message"
+                class="section-message"
+                role="status"
+              ></p>
+
+              <div id="memberships-list" class="resource-grid"></div>
             </div>
 
             <div id="associations-section" class="content-section hidden">
-              <h2>Associations</h2>
-              <p>Create and manage associations and their details.</p>
+              <div class="section-heading">
+                <div>
+                  <h2>All Groups</h2>
+                  <p>Groups currently registered in MemberNet.</p>
+                </div>
+
+                <button
+                  class="secondary refresh-button"
+                  type="button"
+                  data-refresh="associations"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <p
+                id="associations-message"
+                class="section-message"
+                role="status"
+              ></p>
+
+              <div id="associations-list" class="resource-grid"></div>
             </div>
 
             <div id="payments-section" class="content-section hidden">
-              <h2>Payments</h2>
-              <p>Review payment obligations and payment status.</p>
+              <div class="section-heading">
+                <div>
+                  <h2>Payments</h2>
+                  <p>Open obligations and payment history.</p>
+                </div>
+
+                <button
+                  class="secondary refresh-button"
+                  type="button"
+                  data-refresh="payments"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <div class="filter-buttons">
+                <button
+                  id="show-open-payments"
+                  class="filter-button active"
+                  type="button"
+                >
+                  Open payments
+                </button>
+
+                <button
+                  id="show-all-payments"
+                  class="filter-button secondary"
+                  type="button"
+                >
+                  Payment history
+                </button>
+              </div>
+
+              <p
+                id="payments-message"
+                class="section-message"
+                role="status"
+              ></p>
+
+              <div id="payments-list" class="resource-grid"></div>
             </div>
 
             <div id="guardianships-section" class="content-section hidden">
-              <h2>Guardianships</h2>
-              <p>Manage guardian and child account relationships.</p>
+              <div class="section-heading">
+                <div>
+                  <h2>Guardianships</h2>
+                  <p>Your guardian and dependant relationships.</p>
+                </div>
+
+                <button
+                  class="secondary refresh-button"
+                  type="button"
+                  data-refresh="guardianships"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <p
+                id="guardianships-message"
+                class="section-message"
+                role="status"
+              ></p>
+
+              <div id="guardianships-list" class="resource-grid"></div>
             </div>
           </section>
         </div>
       </section>
     </main>
 
-    <script src="/app.js?v=3"></script>
+    <script src="/app.js?v=4"></script>
   </body>
 </html>
