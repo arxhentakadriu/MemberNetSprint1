@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.membernet.association.AssociationNotFoundException;
 import com.membernet.association.DuplicateAssociationException;
 import com.membernet.authorization.AuthorizationConflictException;
+import com.membernet.authorization.AuthorizationForbiddenException;
 import com.membernet.authorization.AuthorizationNotFoundException;
 import com.membernet.authorization.AuthorizationValidationException;
 import com.membernet.guardianship.DuplicateGuardianshipException;
@@ -113,6 +114,13 @@ public class ApiErrorHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Map<String, String> authorizationValidation(
             AuthorizationValidationException error) {
+
+        return Map.of("message", error.getMessage());
+    }
+        @ExceptionHandler(AuthorizationForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    Map<String, String> authorizationForbidden(
+            AuthorizationForbiddenException error) {
 
         return Map.of("message", error.getMessage());
     }

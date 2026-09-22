@@ -14,21 +14,46 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.membernet.auth.SessionAuthenticationInterceptor;
+import com.membernet.auth.SessionResponse;
+import com.membernet.authorization.AuthorizationService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
 
-    private final PaymentService service;
+    private static final String PAYMENT_MANAGE =
+            "PAYMENT_MANAGE";
 
-    public PaymentController(PaymentService service) {
+    private final PaymentService service;
+    private final AuthorizationService authorization;
+
+    public PaymentController(
+            PaymentService service,
+            AuthorizationService authorization) {
+
         this.service = service;
+        this.authorization = authorization;
     }
 
     @PostMapping
     public ResponseEntity<PaymentResponse> create(
-            @Valid @RequestBody CreatePaymentRequest request) {
+            @Valid @RequestBody CreatePaymentRequest request,
+            HttpServletRequest servletRequest) {
+
+        UUID currentUserId = currentUserId(servletRequest);
+
+        if (currentUserId != null) {
+            authorization.requirePermission(
+                    currentUserId,
+                    request.associationId(),
+                    PAYMENT_MANAGE
+            );
+        }
 
         PaymentResponse response = service.create(request);
 
@@ -67,8 +92,19 @@ public class PaymentController {
     @PatchMapping("/{id}/status")
     public PaymentResponse changeStatus(
             @PathVariable UUID id,
-            @Valid @RequestBody
-            UpdatePaymentStatusRequest request) {
+            @Valid @RequestBody UpdatePaymentStatusRequest request,
+            HttpServletRequest servletRequest) {
+
+        PaymentResponse existingPayment = service.findById(id);
+        UUID currentUserId = currentUserId(servletRequest);
+
+        if (currentUserId != null) {
+            authorization.requirePermission(
+                    currentUserId,
+                    existingPayment.associationId(),
+                    PAYMENT_MANAGE
+            );
+        }
 
         return service.changeStatus(id, request.status());
     }
@@ -78,5 +114,26 @@ public class PaymentController {
             @PathVariable UUID id) {
 
         return service.findHistory(id);
+    }
+
+    private UUID currentUserId(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        if (session == null) {
+            return null;
+        }
+
+        Object authenticatedUser = session.getAttribute(
+                SessionAuthenticationInterceptor
+                        .AUTHENTICATED_USER_ATTRIBUTE
+        );
+
+        if (authenticatedUser
+                instanceof SessionResponse sessionResponse) {
+
+            return sessionResponse.userAccountId();
+        }
+
+        return null;
     }
 }
