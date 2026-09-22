@@ -8,8 +8,6 @@ Sprint 2 extends the authentication workflow from Sprint 1 with association mana
 
 ## Features
 
-## Features
-
 - Login with email and password
 - BCrypt password hashing
 - Session-based authentication
