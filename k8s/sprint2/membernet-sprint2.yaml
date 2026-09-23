@@ -50,25 +50,31 @@ spec:
         - name: postgres
           image: postgres:18
           imagePullPolicy: IfNotPresent
+
           ports:
             - name: postgres
               containerPort: 5432
+
           env:
             - name: POSTGRES_DB
               value: membernet_sprint2
+
             - name: POSTGRES_USER
               valueFrom:
                 configMapKeyRef:
                   name: membernet-config
                   key: DB_USERNAME
+
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: membernet-secrets
                   key: DB_PASSWORD
+
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql
+
           readinessProbe:
             exec:
               command:
@@ -79,6 +85,7 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 10
+
           livenessProbe:
             exec:
               command:
@@ -89,6 +96,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 5
+
           resources:
             requests:
               cpu: 100m
@@ -96,6 +104,7 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
@@ -123,76 +132,105 @@ metadata:
   name: membernet
   namespace: membernet
 spec:
-  replicas: 2
+  replicas: 1
+
   selector:
     matchLabels:
       app: membernet
+
+  strategy:
+    type: Recreate
+
   template:
     metadata:
       labels:
         app: membernet
-        spec:
+
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+
       containers:
         - name: membernet
           image: arxhenta/membernet-sprint2:fix-admin-login
           imagePullPolicy: Always
+
           ports:
             - name: http
               containerPort: 8080
+
           env:
             - name: DB_URL
               valueFrom:
                 configMapKeyRef:
                   name: membernet-config
                   key: DB_URL
+
             - name: DB_USERNAME
               valueFrom:
                 configMapKeyRef:
                   name: membernet-config
                   key: DB_USERNAME
+
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: membernet-secrets
                   key: DB_PASSWORD
+
             - name: ADMIN_EMAIL
               valueFrom:
                 secretKeyRef:
                   name: membernet-secrets
                   key: ADMIN_EMAIL
                   optional: true
+
             - name: ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: membernet-secrets
                   key: ADMIN_PASSWORD
                   optional: true
+
             - name: ADMIN_FIRST_NAME
               valueFrom:
                 configMapKeyRef:
                   name: membernet-config
                   key: ADMIN_FIRST_NAME
+
             - name: ADMIN_LAST_NAME
               valueFrom:
                 configMapKeyRef:
                   name: membernet-config
                   key: ADMIN_LAST_NAME
+
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
               port: http
-            initialDelaySeconds: 15
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 10
+
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
               port: http
-            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 5
+
           resources:
             requests:
               cpu: 100m
@@ -200,17 +238,18 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+
           securityContext:
             allowPrivilegeEscalation: false
-            runAsNonRoot: true
-            runAsUser: 1001
             readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
+
           volumeMounts:
             - name: temporary-files
               mountPath: /tmp
+
       volumes:
         - name: temporary-files
           emptyDir: {}
