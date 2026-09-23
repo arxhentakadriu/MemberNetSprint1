@@ -27,4 +27,6 @@ public interface AuthorizationRepository {
     boolean membershipHasRole(UUID membershipId, UUID roleId);
 
     boolean roleHasPermission(UUID roleId, UUID permissionId);
+
+    boolean membershipHasPermission(UUID membershipId, String permissionCode);
 }

@@ -1,484 +1,213 @@
-Assumptions and Risks
-This document records the main assumptions, limitations and identified risks for MemberNet Sprint 1.
+﻿# MemberNet Sprint 2 - Assumptions, Risks and Open Decisions
 
-<<<<<<< HEAD
-This document records the main assumptions, limitations and identified risks for MemberNet Sprint 1.
+## 1. Purpose
 
-## 1. Assumptions
+This document records the assumptions, risks, mitigations and open design
+decisions for MemberNet Sprint 2 RC2.
 
-### 1.1 Existing Accounts
+Sprint 2 is an engineering and training baseline. It is not intended to be
+a complete production release.
 
-User accounts must exist in PostgreSQL before a user can log in.
+## 2. Assumptions
 
-Self-service registration is not included in Sprint 1. Demonstration accounts are created through `DatabaseInitializer` when they do not already exist.
+### 2.1 User accounts
 
-### 1.2 Supported Roles
+- A User Account represents one application identity.
+- Login e-mail addresses are unique and case-insensitive.
+- User Accounts may exist without Memberships.
+- Passwords are stored only as BCrypt hashes.
+- Bootstrap administrator credentials are supplied through environment
+  variables or Kubernetes Secrets.
+- Account status must be ACTIVE before login is accepted.
 
-The current application supports two roles:
+### 2.2 Groups and associations
 
-```text
-MEMBER
-ADMIN
-```
+- Group is the preferred user-facing term.
+- Association is currently used in backend code and persistence.
+- Group and Association represent the same organizational concept in the
+  current Sprint 2 implementation.
+- An Association has a stable UUID and may contain multiple Memberships.
+- Business ID is optional, while name, short name, country code and e-mail
+  are validated.
 
-These roles are sufficient for the Sprint 1 authentication workflow.
+### 2.3 Memberships
 
-Additional roles and permissions may be introduced in future sprints.
+- A Membership connects one User Account with one Association.
+- A User Account may have zero or multiple Memberships.
+- Membership status and validity dates belong to the relationship, not to
+  the User Account.
+- Duplicate Memberships for the same User Account and Association are
+  rejected.
+- A validity end date cannot be earlier than its start date.
 
-### 1.3 Database Availability
+### 2.4 Roles and permissions
 
-PostgreSQL is expected to be available before MemberNet starts.
+- Roles belong to an Association context.
+- Roles are assigned through Memberships.
+- Permissions describe individual capabilities.
+- A Role assigned to a Membership must belong to the same Association.
+- The final production Role and Permission catalogue remains open.
 
-For local development, PostgreSQL is expected to run on the configured host and port.
+### 2.5 Guardianship
 
-For Docker execution, MemberNet connects to the PostgreSQL service through:
+- Guardianship connects two separate User Accounts.
+- Guardian and child are relationship contexts, not different account types.
+- A User Account cannot be its own guardian.
+- Duplicate guardian-child relationships are rejected.
+- Guardianship does not replace Membership, Role or Permission checks.
+- Detailed approval and authorization rules remain future design work.
 
-```text
-jdbc:postgresql://postgres:5432/membernet
-```
+### 2.6 Payments
 
-### 1.4 Environment Configuration
+- MemberNet manages payment obligations and status history.
+- MemberNet does not execute external banking transactions in Sprint 2.
+- Banking credentials and payment-provider secrets are not stored.
+- Amounts must be positive and currency codes are uppercase.
+- A PAID obligation must include a payment timestamp.
+- Payment references are unique.
 
-The database password is expected to be provided through the `DB_PASSWORD` environment variable.
+### 2.7 Authentication
 
-The password must not be stored directly in the source code or committed to GitHub.
+- Successful login creates a server-side authenticated HTTP session.
+- Protected REST endpoints require a valid authenticated session.
+- Global Logout invalidates the session and returns the browser to Login.
+- Session expiry follows the configured application-server rules.
+- Multi-factor authentication, external identity providers and SSO are
+  outside the current scope.
 
-### 1.5 Browser Environment
+### 2.8 Persistence
 
-The application is expected to run in a modern browser with JavaScript enabled.
+- PostgreSQL is the current relational database platform.
+- Flyway manages database schema evolution.
+- UUID values are used as physical identifiers.
+- Database constraints protect mandatory relationships and invalid states.
+- PostgreSQL is an implementation decision, not a permanent business rule.
 
-The user interface is designed for normal desktop and mobile browser operation.
+### 2.9 Deployment
 
-### 1.6 Training Scope
+- Local development may run through Maven or Docker Compose.
+- Kubernetes is used as the Sprint 2 container-orchestration demonstration.
+- Secrets are supplied externally and are not committed to Git.
+- The final production hosting platform and topology remain open.
 
-=======
-1. Assumptions
-   1.1 Existing Accounts
-   User accounts must exist in PostgreSQL before a user can log in.
+## 3. Risks and mitigations
 
-Self-service registration is not included in Sprint 1. Demonstration accounts are created through DatabaseInitializer when they do not already exist.
+### 3.1 Unauthorized cross-group access
 
-1.2 Supported Roles
-The current application supports two roles:
+**Risk:** A user with Memberships in several Associations could access data
+from the wrong Association.
 
-MEMBER
-ADMIN
-These roles are sufficient for the Sprint 1 authentication workflow.
+**Mitigation:** Carry Association context through Memberships, Roles and
+Permissions, and enforce access in the backend rather than only hiding user
+interface controls.
 
-Additional roles and permissions may be introduced in future sprints.
+### 3.2 Incomplete authorization enforcement
 
-1.3 Database Availability
-PostgreSQL is expected to be available before MemberNet starts.
+**Risk:** Authentication may protect an endpoint while still allowing an
+authenticated user to perform an operation without the required Permission.
 
-For local development, PostgreSQL is expected to run on the configured host and port.
+**Mitigation:** Add operation-level authorization checks and automated tests
+for allowed and denied requests.
 
-For Docker execution, MemberNet connects to the PostgreSQL service through:
+### 3.3 Exposed credentials
 
-jdbc:postgresql://postgres:5432/membernet
-1.4 Environment Configuration
-The database password is expected to be provided through the DB_PASSWORD environment variable.
+**Risk:** Database or administrator passwords could be committed to Git,
+printed in logs or included in documentation.
 
-The password must not be stored directly in the source code or committed to GitHub.
+**Mitigation:** Use environment variables, `.env` files excluded by
+`.gitignore`, Docker configuration and Kubernetes Secrets. Example files use
+placeholders only.
 
-1.5 Browser Environment
-The application is expected to run in a modern browser with JavaScript enabled.
+### 3.4 Invalid or inconsistent data
 
-The user interface is designed for normal desktop and mobile browser operation.
+**Risk:** Duplicate Memberships, Guardianships, payment references or invalid
+validity periods could create inconsistent business information.
 
-1.6 Training Scope
->>>>>>> 355f6ab (Update assumptions and risks documentation)
-MemberNet Sprint 1 is a training application.
+**Mitigation:** Apply request validation, service-level rules, unique
+constraints, foreign keys and automated tests.
 
-It demonstrates authentication, account loading, permissions, role-based pages, PostgreSQL integration, automated testing and Docker deployment.
+### 3.5 Session misuse
 
-It is not intended to be a production-ready identity management system.
+**Risk:** Protected resources could remain available after logout or be
+accessed without authentication.
 
-<<<<<<< HEAD
-### 1.7 Kubernetes Scope
+**Mitigation:** Invalidate the HTTP session during logout and use a backend
+interceptor for protected API routes. Test access before login and after
+logout.
 
-=======
-1.7 Kubernetes Scope
->>>>>>> 355f6ab (Update assumptions and risks documentation)
-Kubernetes deployment belongs to Sprint 2.
+### 3.6 Sensitive logging
 
-Sprint 1 only prepares the application for future Kubernetes use through containerization, environment-based configuration and a health endpoint.
+**Risk:** Passwords, hashes, personal information or payment-related data
+could appear in logs.
 
-<<<<<<< HEAD
-### 1.8 Monitoring Scope
+**Mitigation:** Do not log credentials or complete sensitive payloads.
+Production logging configuration requires a separate security review.
 
-Spring Boot Actuator provides basic health monitoring through:
+### 3.7 Frontend and API inconsistency
 
-```text
-/actuator/health
-```
+**Risk:** The user interface may show controls or terminology that do not
+match the REST API and business model.
 
-Advanced metrics, alerts, dashboards and centralized logging are outside the Sprint 1 scope.
+**Mitigation:** Use Group in user-facing text, keep Association documented as
+the backend term, and evolve the UI together with OpenAPI and implementation.
 
-## 2. Identified Risks
+### 3.8 Migration failure
 
-### 2.1 Exposed Database Credentials
+**Risk:** Application startup could fail when the database schema and code do
+not match.
 
-**Risk:** A database password could accidentally be committed to GitHub through `application.properties`, `application.yml` or `docker-compose.yml`.
+**Mitigation:** Keep Flyway migrations immutable after deployment, validate
+them during startup and execute automated tests against PostgreSQL.
 
-**Impact:** Unauthorized users could gain access to the database if the credentials were valid in an accessible environment.
+### 3.9 Container and port conflicts
 
-**Mitigation:**
+**Risk:** Local services, Kubernetes port-forwarding and Docker containers
+may attempt to use the same port.
 
-* Use the `DB_PASSWORD` environment variable.
-* Review `git status` and staged changes before every commit.
-* Do not place real credentials in documentation or screenshots.
-* Replace any credential immediately if it is accidentally exposed.
+**Mitigation:** Document configurable ports, inspect active processes and
+stop unused development services before startup.
 
-### 2.2 Weak Demonstration Passwords
+### 3.10 AI-generated defects
 
-**Risk:** Demonstration accounts use simple passwords for training and testing.
+**Risk:** AI-generated code or documentation may introduce incorrect
+assumptions, duplicate files or inconsistent behavior.
 
-**Impact:** These accounts would be insecure in a production environment.
+**Mitigation:** Review every change, run automated tests, inspect Git diffs
+and verify decisions against the Sprint 2 source material.
 
-**Mitigation:**
+## 4. Open design decisions
 
-* Use demonstration credentials only in local training environments.
-* Do not use them in production.
-* Introduce stronger password requirements in future versions.
-* Configure initial credentials through secure environment variables or an administrator setup process.
+The following items are intentionally not fixed permanently by Sprint 2:
 
-### 2.3 Browser Session Storage
+- Final distinction between the terms Group and Association
+- Final Role and Permission catalogue
+- Detailed active Group storage and transport mechanism
+- Full Guardianship approval and termination workflow
+- Payment-provider selection and reconciliation
+- Production identity provider and authentication technology
+- Production deployment platform and scaling topology
+- Final session timeout and invalidation policies
+- Complete frontend framework and component structure
+- Final backup, monitoring and disaster-recovery procedures
 
-**Risk:** Sprint 1 uses browser-side state to retain account information after login.
+## 5. Acceptance evidence
 
-**Impact:** Client-side state is not sufficient for secure production authentication and can be modified by the browser user.
+Sprint 2 completion is demonstrated through:
 
-**Mitigation:**
+- PostgreSQL and Flyway migrations
+- REST APIs using DTOs and validation
+- OpenAPI/Swagger documentation
+- Session authentication and Global Logout
+- Automated controller and integration tests
+- GitHub Actions execution
+- Docker Compose and Kubernetes manifests
+- Security and deployment documentation
+- Manual verification of login, protected access and logout
+- Verification of Association, Membership, Authorization, Guardianship and
+  Payment operations
 
-* Treat browser state as a Sprint 1 user-interface mechanism only.
-* Add Spring Security in a future sprint.
-* Use secure server-side sessions or secure token cookies.
-* Enforce permissions on backend endpoints, not only in the user interface.
+## 6. Review rule
 
-### 2.4 Missing Production Authorization
-
-**Risk:** The current role result is mainly used to select the Member or Administrator user interface.
-
-**Impact:** Hiding a page in the browser does not protect future business endpoints.
-
-**Mitigation:**
-
-* Add Spring Security authorization.
-* Protect backend endpoints according to the authenticated user's roles.
-* Add automated authorization tests.
-
-### 2.5 Database Availability
-
-**Risk:** Authentication cannot complete if PostgreSQL is unavailable.
-
-**Impact:** Users cannot log in or load their account information.
-
-**Mitigation:**
-
-* Use the Docker Compose PostgreSQL health check.
-* Monitor the application through Spring Boot Actuator.
-* Add database backup, recovery and operational monitoring for production.
-* Provide clear startup and database connection logs.
-
-### 2.6 Database Data Loss
-
-**Risk:** Docker database data can be deleted if the volume is intentionally removed.
-
-**Impact:** Stored accounts and roles may be lost.
-
-**Mitigation:**
-
-* Use a persistent Docker volume.
-* Use `docker compose down` for normal shutdown.
-* Avoid `docker compose down -v` unless deletion is intentional.
-* Introduce database backups for production environments.
-
-### 2.7 Automatic Schema Updates
-
-**Risk:** The training configuration can allow Hibernate to update the database schema automatically.
-
-**Impact:** Automatic schema changes may be unpredictable in a production environment.
-
-**Mitigation:**
-
-* Use automatic updates only during development.
-* Introduce Flyway or Liquibase migrations in a future version.
-* Review and version every database schema change.
-
-### 2.8 Docker Configuration Errors
-
-**Risk:** Incorrect service names, environment variables, ports or volume paths can prevent the containers from starting.
-
-**Impact:** MemberNet may be unable to connect to PostgreSQL.
-
-**Mitigation:**
-
-* Validate the configuration with `docker compose config`.
-* Use `postgres` as the database hostname inside Docker.
-* Check container status with `docker compose ps`.
-* Review logs with `docker compose logs`.
-* Keep PostgreSQL 18 data mounted at the supported volume location.
-
-### 2.9 Port Conflicts
-
-**Risk:** Port `8080` may already be used by another local application or Docker container.
-
-**Impact:** MemberNet cannot start or cannot expose its browser interface.
-
-**Mitigation:**
-
-* Stop the existing process or container.
-* Check running containers with `docker ps`.
-* Change the published host port when necessary.
-
-### 2.10 Demonstration Account Initialization
-
-**Risk:** `DatabaseInitializer` only creates an account if its username does not already exist.
-
-**Impact:** Changing account information in the initializer does not automatically update an existing database row.
-
-**Mitigation:**
-
-* Update existing account information through PostgreSQL.
-* Introduce database migrations or an administrator account-management interface.
-* Keep initializer data limited to training use.
-
-### 2.11 Limited Automated Test Coverage
-
-**Risk:** Sprint 1 currently contains a small number of automated controller tests.
-
-**Impact:** Some service, repository, Docker or database problems may not be detected automatically.
-
-**Mitigation:**
-
-* Retain manual test cases.
-* Add service unit tests.
-* Add repository integration tests.
-* Use Testcontainers for isolated PostgreSQL tests.
-* Add a CI workflow that runs tests for each each Git push.
-
-### 2.12 Health Endpoint Limitations
-
-**Risk:** A basic `UP` response does not provide complete monitoring or performance information.
-
-**Impact:** Some operational problems may not be detected by the current health check.
-
-**Mitigation:**
-
-* Add database health details where appropriate.
-* Add application metrics.
-* Introduce centralized logs, alerts and dashboards in future sprints.
-* Use readiness and liveness probes when Kubernetes is implemented.
-
-### 2.13 AI-Generated Errors
-
-**Risk:** AI-generated code or documentation may contain incorrect assumptions, outdated suggestions, syntax errors or security problems.
-
-**Impact:** Unverified suggestions may introduce defects or inaccurate documentation.
-
-**Mitigation:**
-
-* Review every important AI suggestion.
-* Compile and test generated code.
-* Compare documentation with the actual implementation.
-* Use official documentation when verifying technical decisions.
-* Keep human responsibility for final decisions.
-
-### 2.14 Documentation Becoming Outdated
-
-**Risk:** Documentation may continue to describe an earlier implementation, such as the removed in-memory repository.
-
-**Impact:** Reviewers may misunderstand the final architecture.
-
-**Mitigation:**
-
-* Update documentation whenever the implementation changes.
-* Remove references to components that no longer exist.
-* Review README and all files in `docs` before project delivery.
-* Commit documentation changes together with related code changes.
-
-## 3. Risk Review Summary
-
-=======
-1.8 Monitoring Scope
-Spring Boot Actuator provides basic health monitoring through:
-
-/actuator/health
-Advanced metrics, alerts, dashboards and centralized logging are outside the Sprint 1 scope.
-
-2. Identified Risks
-   2.1 Exposed Database Credentials
-   Risk: A database password could accidentally be committed to GitHub through application.properties, application.yml or docker-compose.yml.
-
-Impact: Unauthorized users could gain access to the database if the credentials were valid in an accessible environment.
-
-Mitigation:
-
-Use the DB_PASSWORD environment variable.
-Review git status and staged changes before every commit.
-Do not place real credentials in documentation or screenshots.
-Replace any credential immediately if it is accidentally exposed.
-2.2 Weak Demonstration Passwords
-Risk: Demonstration accounts use simple passwords for training and testing.
-
-Impact: These accounts would be insecure in a production environment.
-
-Mitigation:
-
-Use demonstration credentials only in local training environments.
-Do not use them in production.
-Introduce stronger password requirements in future versions.
-Configure initial credentials through secure environment variables or an administrator setup process.
-2.3 Browser Session Storage
-Risk: Sprint 1 uses browser-side state to retain account information after login.
-
-Impact: Client-side state is not sufficient for secure production authentication and can be modified by the browser user.
-
-Mitigation:
-
-Treat browser state as a Sprint 1 user-interface mechanism only.
-Add Spring Security in a future sprint.
-Use secure server-side sessions or secure token cookies.
-Enforce permissions on backend endpoints, not only in the user interface.
-2.4 Missing Production Authorization
-Risk: The current role result is mainly used to select the Member or Administrator user interface.
-
-Impact: Hiding a page in the browser does not protect future business endpoints.
-
-Mitigation:
-
-Add Spring Security authorization.
-Protect backend endpoints according to the authenticated user's roles.
-Add automated authorization tests.
-2.5 Database Availability
-Risk: Authentication cannot complete if PostgreSQL is unavailable.
-
-Impact: Users cannot log in or load their account information.
-
-Mitigation:
-
-Use the Docker Compose PostgreSQL health check.
-Monitor the application through Spring Boot Actuator.
-Add database backup, recovery and operational monitoring for production.
-Provide clear startup and database connection logs.
-2.6 Database Data Loss
-Risk: Docker database data can be deleted if the volume is intentionally removed.
-
-Impact: Stored accounts and roles may be lost.
-
-Mitigation:
-
-Use a persistent Docker volume.
-Use docker compose down for normal shutdown.
-Avoid docker compose down -v unless deletion is intentional.
-Introduce database backups for production environments.
-2.7 Automatic Schema Updates
-Risk: The training configuration can allow Hibernate to update the database schema automatically.
-
-Impact: Automatic schema changes may be unpredictable in a production environment.
-
-Mitigation:
-
-Use automatic updates only during development.
-Introduce Flyway or Liquibase migrations in a future version.
-Review and version every database schema change.
-2.8 Docker Configuration Errors
-Risk: Incorrect service names, environment variables, ports or volume paths can prevent the containers from starting.
-
-Impact: MemberNet may be unable to connect to PostgreSQL.
-
-Mitigation:
-
-Validate the configuration with docker compose config.
-Use postgres as the database hostname inside Docker.
-Check container status with docker compose ps.
-Review logs with docker compose logs.
-Keep PostgreSQL 18 data mounted at the supported volume location.
-2.9 Port Conflicts
-Risk: Port 8080 may already be used by another local application or Docker container.
-
-Impact: MemberNet cannot start or cannot expose its browser interface.
-
-Mitigation:
-
-Stop the existing process or container.
-Check running containers with docker ps.
-Change the published host port when necessary.
-2.10 Demonstration Account Initialization
-Risk: DatabaseInitializer only creates an account if its username does not already exist.
-
-Impact: Changing account information in the initializer does not automatically update an existing database row.
-
-Mitigation:
-
-Update existing account information through PostgreSQL.
-Introduce database migrations or an administrator account-management interface.
-Keep initializer data limited to training use.
-2.11 Limited Automated Test Coverage
-Risk: Sprint 1 currently contains a small number of automated controller tests.
-
-Impact: Some service, repository, Docker or database problems may not be detected automatically.
-
-Mitigation:
-
-Retain manual test cases.
-Add service unit tests.
-Add repository integration tests.
-Use Testcontainers for isolated PostgreSQL tests.
-Add a CI workflow that runs tests for each each Git push.
-2.12 Health Endpoint Limitations
-Risk: A basic UP response does not provide complete monitoring or performance information.
-
-Impact: Some operational problems may not be detected by the current health check.
-
-Mitigation:
-
-Add database health details where appropriate.
-Add application metrics.
-Introduce centralized logs, alerts and dashboards in future sprints.
-Use readiness and liveness probes when Kubernetes is implemented.
-2.13 AI-Generated Errors
-Risk: AI-generated code or documentation may contain incorrect assumptions, outdated suggestions, syntax errors or security problems.
-
-Impact: Unverified suggestions may introduce defects or inaccurate documentation.
-
-Mitigation:
-
-Review every important AI suggestion.
-Compile and test generated code.
-Compare documentation with the actual implementation.
-Use official documentation when verifying technical decisions.
-Keep human responsibility for final decisions.
-2.14 Documentation Becoming Outdated
-Risk: Documentation may continue to describe an earlier implementation, such as the removed in-memory repository.
-
-Impact: Reviewers may misunderstand the final architecture.
-
-Mitigation:
-
-Update documentation whenever the implementation changes.
-Remove references to components that no longer exist.
-Review README and all files in docs before project delivery.
-Commit documentation changes together with related code changes. 3. Risk Review Summary
->>>>>>> 355f6ab (Update assumptions and risks documentation)
-The main Sprint 1 risks are acceptable for a training application.
-
-The highest-priority controls are:
-
-<<<<<<< HEAD
-1. Keep database credentials outside source control.
-2. Store passwords using BCrypt.
-3. Verify role behavior through testing.
-4. Preserve PostgreSQL data through Docker volumes.
-5. Review AI-generated work manually.
-6. Keep the documentation consistent with the final implementation.
-7. Introduce production authentication and authorization controls in future sprints.
-=======
-Keep database credentials outside source control.
-Store passwords using BCrypt.
-Verify role behavior through testing.
-Preserve PostgreSQL data through Docker volumes.
-Review AI-generated work manually.
-Keep the documentation consistent with the final implementation.
-Introduce production authentication and authorization controls in future sprints.
->>>>>>> 355f6ab (Update assumptions and risks documentation)
+When an assumption becomes a confirmed decision, update this document, the
+architecture documentation, implementation, database model, API
+documentation and relevant tests together.

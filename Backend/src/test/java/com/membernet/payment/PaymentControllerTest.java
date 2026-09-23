@@ -2,25 +2,41 @@ package com.membernet.payment;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
+import java
+        .util.UUID;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter
+        .api.Test;
+import static org.mockito
+        .Mockito.doThrow;
+import static org.mockito
+        .Mockito.verify;
+import org.springframework.beans.factory
+        .annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.annotation.Rollback;
+import org.springframework.test.annotation
+        .Rollback;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers
+        .jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.membernet.association.AssociationEntity;
 import com.membernet.association.AssociationStatus;
 import com.membernet.association.SpringDataAssociationRepository;
+import com.membernet.auth.SessionAuthenticationInterceptor;
+import com.membernet.auth.SessionResponse;
+import com.membernet.authorization.AuthorizationForbiddenException;
+import com.membernet.authorization.AuthorizationService;
 import com.membernet.membership.MembershipEntity;
 import com.membernet.membership.MembershipStatus;
 import com.membernet.membership.SpringDataMembershipRepository;
@@ -38,6 +54,9 @@ class PaymentControllerTest {
     @Autowired
     private MockMvc mvc;
 
+    @MockitoBean
+    private AuthorizationService authorization;
+
     @Autowired
     private SpringDataUserAccountRepository users;
 
@@ -54,10 +73,13 @@ class PaymentControllerTest {
     private PasswordEncoder passwordEncoder;
 
     @Test
-    void paymentObligationCanBeCreated() throws Exception {
+    void paymentObligationCanBeCreated()
+            throws Exception {
+
         TestData data = createTestData();
 
-        String reference = "PAY-" + UUID.randomUUID();
+        String reference =
+                "PAY-" + UUID.randomUUID();
 
         String request = """
                 {
@@ -79,7 +101,9 @@ class PaymentControllerTest {
         );
 
         mvc.perform(post("/api/payments")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
                         .content(request))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.paymentReference")
@@ -93,21 +117,25 @@ class PaymentControllerTest {
     }
 
     @Test
-    void paymentStatusCanBeChangedToPaid() throws Exception {
+    void paymentStatusCanBeChangedToPaid()
+            throws Exception {
+
         TestData data = createTestData();
 
-        PaymentResponse payment = paymentService.create(
-                new CreatePaymentRequest(
-                        data.user().getId(),
-                        data.association().getId(),
-                        data.membership().getId(),
-                        new BigDecimal("25.00"),
-                        "EUR",
-                        "PAY-" + UUID.randomUUID(),
-                        "Training fee",
-                        LocalDate.now().plusDays(10)
-                )
-        );
+        PaymentResponse payment =
+                paymentService.create(
+                        new CreatePaymentRequest(
+                                data.user().getId(),
+                                data.association().getId(),
+                                data.membership().getId(),
+                                new BigDecimal("25.00"),
+                                "EUR",
+                                "PAY-" + UUID.randomUUID(),
+                                "Training fee",
+                                LocalDate.now()
+                                        .plusDays(10)
+                        )
+                );
 
         String request = """
                 {
@@ -119,7 +147,9 @@ class PaymentControllerTest {
                         "/api/payments/{id}/status",
                         payment.id()
                 )
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
                         .content(request))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status")
@@ -129,7 +159,9 @@ class PaymentControllerTest {
     }
 
     @Test
-    void paymentAmountMustBePositive() throws Exception {
+    void paymentAmountMustBePositive()
+            throws Exception {
+
         TestData data = createTestData();
 
         String request = """
@@ -152,42 +184,242 @@ class PaymentControllerTest {
         );
 
         mvc.perform(post("/api/payments")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
                         .content(request))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value(
                                 "Payment amount must be "
-                                + "greater than zero."
+                                        + "greater than zero."
                         ));
     }
 
-    private TestData createTestData() {
-        String uniqueValue = UUID.randomUUID().toString();
+    @Test
+    void userWithPaymentPermissionCanCreatePayment()
+            throws Exception {
 
-        UserAccountEntity user = users.saveAndFlush(
-                new UserAccountEntity(
-                        "payment-" + uniqueValue + "@example.com",
-                        passwordEncoder.encode("test-password"),
-                        "Payment",
-                        "User",
-                        "payment-" + uniqueValue + "@example.com",
-                        null,
+        TestData data = createTestData();
+
+        MockHttpSession session =
+                authenticatedSession(
+                        data.user().getId()
+                );
+
+        String reference =
+                "AUTHORIZED-" + UUID.randomUUID();
+
+        String request = """
+                {
+                  "userAccountId": "%s",
+                  "associationId": "%s",
+                  "membershipId": "%s",
+                  "amount": 35.00,
+                  "currencyCode": "EUR",
+                  "paymentReference": "%s",
+                  "description": "Authorized payment test",
+                  "dueDate": "%s"
+                }
+                """.formatted(
+                data.user().getId(),
+                data.association().getId(),
+                data.membership().getId(),
+                reference,
+                LocalDate.now().plusDays(30)
+        );
+
+        mvc.perform(post("/api/payments")
+                        .session(session)
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
+                        .content(request))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.paymentReference")
+                        .value(reference));
+
+        verify(authorization).requirePermission(
+                data.user().getId(),
+                data.association().getId(),
+                "PAYMENT_MANAGE"
+        );
+    }
+
+    @Test
+    void userWithoutPaymentPermissionReceivesForbidden()
+            throws Exception {
+
+        TestData data = createTestData();
+
+        MockHttpSession session =
+                authenticatedSession(
+                        data.user().getId()
+                );
+
+        String reference =
+                "FORBIDDEN-" + UUID.randomUUID();
+
+        doThrow(new AuthorizationForbiddenException(
+                "You do not have the required permission: "
+                        + "PAYMENT_MANAGE."
+        )).when(authorization).requirePermission(
+                data.user().getId(),
+                data.association().getId(),
+                "PAYMENT_MANAGE"
+        );
+
+        String request = """
+                {
+                  "userAccountId": "%s",
+                  "associationId": "%s",
+                  "membershipId": "%s",
+                  "amount": 35.00,
+                  "currencyCode": "EUR",
+                  "paymentReference": "%s",
+                  "description": "Forbidden payment test",
+                  "dueDate": "%s"
+                }
+                """.formatted(
+                data.user().getId(),
+                data.association().getId(),
+                data.membership().getId(),
+                reference,
+                LocalDate.now().plusDays(30)
+        );
+
+        mvc.perform(post("/api/payments")
+                        .session(session)
+                        .contentType(
+                                MediaType.APPLICATION_JSON
+                        )
+                        .content(request))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(
+                        "You do not have the required "
+                                + "permission: "
+                                + "PAYMENT_MANAGE."
+                ));
+
+        verify(authorization).requirePermission(
+                data.user().getId(),
+                data.association().getId(),
+                "PAYMENT_MANAGE"
+        );
+    }
+
+    @Test
+    void userCannotReadAnotherUsersPaymentWithoutPermission()
+            throws Exception {
+
+        TestData data = createTestData();
+
+        PaymentResponse payment =
+                paymentService.create(
+                        new CreatePaymentRequest(
+                                data.user().getId(),
+                                data.association().getId(),
+                                data.membership().getId(),
+                                new BigDecimal("45.00"),
+                                "EUR",
+                                "PRIVATE-"
+                                        + UUID.randomUUID(),
+                                "Private payment test",
+                                LocalDate.now()
+                                        .plusDays(20)
+                        )
+                );
+
+        UUID otherUserId = UUID.randomUUID();
+
+        MockHttpSession session =
+                authenticatedSession(otherUserId);
+
+        doThrow(new AuthorizationForbiddenException(
+                "You do not have an active membership "
+                        + "in the selected association."
+        )).when(authorization).requirePermission(
+                otherUserId,
+                data.association().getId(),
+                "PAYMENT_MANAGE"
+        );
+
+        mvc.perform(get(
+                        "/api/payments/{id}",
+                        payment.id()
+                )
+                        .session(session))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(
+                        "You do not have an active "
+                                + "membership in the selected "
+                                + "association."
+                ));
+
+        verify(authorization).requirePermission(
+                otherUserId,
+                data.association().getId(),
+                "PAYMENT_MANAGE"
+        );
+    }
+
+    private MockHttpSession authenticatedSession(
+            UUID userAccountId) {
+
+        MockHttpSession session =
+                new MockHttpSession();
+
+        session.setAttribute(
+                SessionAuthenticationInterceptor
+                        .AUTHENTICATED_USER_ATTRIBUTE,
+                new SessionResponse(
+                        true,
+                        userAccountId,
+                        "payment-user@example.com",
+                        "Payment User",
                         AccountStatus.ACTIVE,
-                        "en",
-                        "Europe/Helsinki",
-                        EventViewPreference.LIST
+                        "MemberNet home"
                 )
         );
+
+        return session;
+    }
+
+    private TestData createTestData() {
+        String uniqueValue =
+                UUID.randomUUID().toString();
+
+        UserAccountEntity user =
+                users.saveAndFlush(
+                        new UserAccountEntity(
+                                "payment-" + uniqueValue
+                                        + "@example.com",
+                                passwordEncoder.encode(
+                                        "test-password"
+                                ),
+                                "Payment",
+                                "User",
+                                "payment-" + uniqueValue
+                                        + "@example.com",
+                                null,
+                                AccountStatus.ACTIVE,
+                                "en",
+                                "Europe/Helsinki",
+                                EventViewPreference.LIST
+                        )
+                );
 
         AssociationEntity association =
                 associations.saveAndFlush(
                         new AssociationEntity(
-                                "Payment Association " + uniqueValue,
-                                "PAY-" + uniqueValue.substring(0, 8),
+                                "Payment Association "
+                                        + uniqueValue,
+                                "PAY-" + uniqueValue
+                                        .substring(0, 8),
                                 "BUS-" + uniqueValue,
                                 "XK",
-                                "association-" + uniqueValue
+                                "association-"
+                                        + uniqueValue
                                         + "@example.com",
                                 AssociationStatus.ACTIVE,
                                 true
@@ -205,7 +437,11 @@ class PaymentControllerTest {
                         )
                 );
 
-        return new TestData(user, association, membership);
+        return new TestData(
+                user,
+                association,
+                membership
+        );
     }
 
     private record TestData(

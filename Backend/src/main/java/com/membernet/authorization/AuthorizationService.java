@@ -1,14 +1,17 @@
 package com.membernet.authorization;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.membernet.association.AssociationRepository;
 import com.membernet.membership.Membership;
 import com.membernet.membership.MembershipRepository;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthorizationService {
@@ -162,12 +165,132 @@ public class AuthorizationService {
 
     @Transactional(readOnly = true)
     public List<RoleResponse> findRolesByAssociation(
-            java.util.UUID associationId) {
+            UUID associationId) {
 
-        return authorization.findRolesByAssociationId(associationId)
+        return authorization
+                .findRolesByAssociationId(associationId)
                 .stream()
                 .map(RoleResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public void requirePermission(
+            UUID userAccountId,
+            UUID associationId,
+            String permissionCode) {
+
+        if (userAccountId == null) {
+            throw new AuthorizationForbiddenException(
+                    "An authenticated user is required."
+            );
+        }
+
+        Membership membership = memberships
+                .findByUserAndAssociation(
+                        userAccountId,
+                        associationId
+                )
+                .filter(value -> value.isActiveOn(
+                        LocalDate.now(ZoneOffset.UTC)
+                ))
+                .orElseThrow(
+                        () -> new AuthorizationForbiddenException(
+                                "You do not have an active membership "
+                                        + "in the selected association."
+                        )
+                );
+
+        String normalizedPermission =
+                normalizeCode(permissionCode);
+
+        if (!authorization.membershipHasPermission(
+                membership.id(),
+                normalizedPermission)) {
+
+            throw new AuthorizationForbiddenException(
+                    "You do not have the required permission: "
+                            + normalizedPermission + "."
+            );
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void requirePermissionForMembership(
+            UUID userAccountId,
+            UUID membershipId,
+            String permissionCode) {
+
+        Membership membership = memberships
+                .findById(membershipId)
+                .orElseThrow(
+                        () -> new AuthorizationNotFoundException(
+                                "The selected membership "
+                                        + "does not exist."
+                        )
+                );
+
+        requirePermission(
+                userAccountId,
+                membership.associationId(),
+                permissionCode
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public void requirePermissionForRole(
+            UUID userAccountId,
+            UUID roleId,
+            String permissionCode) {
+
+        Role role = authorization
+                .findRoleById(roleId)
+                .orElseThrow(
+                        () -> new AuthorizationNotFoundException(
+                                "The selected role does not exist."
+                        )
+                );
+
+        requirePermission(
+                userAccountId,
+                role.associationId(),
+                permissionCode
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public void requirePermissionInAnyAssociation(
+            UUID userAccountId,
+            String permissionCode) {
+
+        if (userAccountId == null) {
+            throw new AuthorizationForbiddenException(
+                    "An authenticated user is required."
+            );
+        }
+
+        String normalizedPermission =
+                normalizeCode(permissionCode);
+
+        boolean permissionGranted = memberships
+                .findByUserAccountId(userAccountId)
+                .stream()
+                .filter(membership -> membership.isActiveOn(
+                        LocalDate.now(ZoneOffset.UTC)
+                ))
+                .anyMatch(membership ->
+                        authorization.membershipHasPermission(
+                                membership.id(),
+                                normalizedPermission
+                        )
+                );
+
+        if (!permissionGranted) {
+            throw new AuthorizationForbiddenException(
+                    "You do not have the required permission: "
+                            + normalizedPermission + "."
+            );
+        }
     }
 
     private String normalizeCode(String code) {

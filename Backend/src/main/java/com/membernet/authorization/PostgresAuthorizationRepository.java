@@ -108,6 +108,16 @@ public class PostgresAuthorizationRepository
                 permissionId
         );
     }
+    @Override
+public boolean membershipHasPermission(
+        UUID membershipId,
+        String permissionCode) {
+
+    return membershipRoles.countPermissionAssignments(
+            membershipId,
+            permissionCode
+    ) > 0;
+}
 
     private Role toRole(RoleEntity entity) {
         return new Role(
