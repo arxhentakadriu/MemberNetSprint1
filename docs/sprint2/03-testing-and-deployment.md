@@ -64,7 +64,7 @@ mvn clean test
 Verified result:
 
 ```text
-Tests run: 23
+Tests run: 32
 Failures: 0
 Errors: 0
 Skipped: 0

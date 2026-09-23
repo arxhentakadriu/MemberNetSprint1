@@ -48,12 +48,12 @@
 
 ## Tests
 
-- [ ] `mvn clean test` completes successfully
-- [ ] 23 tests run
-- [ ] 0 failures
-- [ ] 0 errors
-- [ ] 0 skipped tests
-- [ ] Manual session workflow is verified
+- [x] `mvn clean test` completes successfully
+- [x] 32 tests run
+- [x] 0 failures
+- [x] 0 errors
+- [x] 0 skipped tests
+- [x] Manual session workflow is verified
 
 ## API Documentation
 

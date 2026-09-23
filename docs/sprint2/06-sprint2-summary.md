@@ -110,7 +110,7 @@ OpenAPI specification:
 The final verified Maven test result was:
 
 ```text
-Tests run: 23
+Tests run: 32
 Failures: 0
 Errors: 0
 Skipped: 0
